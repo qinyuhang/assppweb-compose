@@ -1,0 +1,20 @@
+FROM caddy:builder AS builder
+
+# 使用参数化构建，提高缓存效率
+ARG CADDY_VERSION=latest
+ARG CLOUDFLARE_MODULE=github.com/caddy-dns/cloudflare
+
+RUN xcaddy build \
+    --with ${CLOUDFLARE_MODULE}
+
+FROM caddy:latest
+
+# 将构建的 caddy 二进制文件复制到最终镜像
+COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+
+# 设置工作目录
+WORKDIR /etc/caddy
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD caddy version || exit 1

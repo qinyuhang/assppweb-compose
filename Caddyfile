@@ -1,0 +1,91 @@
+# Caddy 配置文件 - AssppWeb 生产部署
+# 支持 Cloudflare 代理 + DNS 验证
+
+# 主域名配置
+# 从环境变量 APP_DOMAIN 读取域名
+{$APP_DOMAIN} {
+  # 反向代理到后端应用
+  reverse_proxy asspp:8080 {
+    # WebSocket 支持（重要！）
+    header_up Connection "Upgrade"
+    header_up Upgrade "websocket"
+
+    # 超时配置 - 防止长连接断开
+    #timeout 0
+    #flush_interval -1
+
+    # 健康检查
+    #health_uri /api/settings
+    #health_interval 10s
+    #health_timeout 5s
+  }
+
+  # 请求日志
+  log {
+    format json
+    output stdout
+  }
+
+  # 安全头
+  header {
+    # HTTPS 强制
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+    # 防止 MIME 嗅探
+    X-Content-Type-Options "nosniff"
+
+    # XSS 保护
+    X-Frame-Options "SAMEORIGIN"
+    X-XSS-Protection "1; mode=block"
+
+    # Referrer Policy
+    Referrer-Policy "strict-origin-when-cross-origin"
+
+    # 缓存控制
+    Cache-Control "public, max-age=3600"
+  }
+
+  # GZIP 压缩
+  encode gzip
+
+  # TLS 配置 - Cloudflare DNS 验证
+  tls {
+    dns cloudflare {env.CF_API_TOKEN}
+  }
+}
+
+# 配置说明：
+#
+# 1. 环境变量配置
+#    - APP_DOMAIN: 在 .env 文件中设置你的域名 (如 app.welkin.online)
+#    - CF_API_TOKEN: 在 .env 文件中设置你的 Cloudflare API Token
+#
+# 2. Caddyfile 中的环境变量语法
+#    - {$ENV_VAR_NAME} 用于读取环境变量
+#    - {env.ENV_VAR_NAME} 用于在 tls 块中访问环境变量
+#
+# 3. 如何获取 Cloudflare API Token
+#    a) 登录 Cloudflare Dashboard: https://dash.cloudflare.com/
+#    b) 进入 "我的资料" → "API 令牌"
+#    c) 创建令牌，权限选择：Zone > Zone > Read + Zone > DNS > Edit
+#    d) 复制生成的 token，添加到 .env 文件中
+#
+# 4. .env 文件示例
+#    APP_DOMAIN=app.welkin.online
+#    CF_API_TOKEN=your_actual_cloudflare_token_here
+#    ACME_AGREE=true
+#
+# 5. Cloudflare 代理设置
+#    - 在 Cloudflare Dashboard 中，DNS 记录可以保持"已代理"状态（橙色云）
+#    - Caddy 会通过 DNS 验证，无需 HTTP 验证
+#    - Let's Encrypt 可以直接验证你的域名所有权
+#
+# 6. 证书自动续签
+#    - Caddy 会自动在证书过期前 30 天续签
+#    - DNS 验证会自动进行，无需手动干预
+#
+# 7. 日志查看
+#    - docker-compose logs -f caddy
+#
+# 8. 证书状态
+#    - docker exec <caddy-container-id> caddy list-json tls-certs

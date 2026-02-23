@@ -1,0 +1,47 @@
+services:
+  asspp:
+    image: ghcr.io/lakr233/assppweb:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./mnt/asspp-data:/data
+    environment:
+      - DATA_DIR=/data
+      - PORT=8080
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "128m"
+        max-file: "5"
+    networks:
+      - asspp-network
+
+  caddy:
+    build:
+      context: .
+      dockerfile: Dockerfile.caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    environment:
+      - ACME_AGREE=true
+      - CF_API_TOKEN=${CF_API_TOKEN}
+      - APP_DOMAIN=${APP_DOMAIN}
+    networks:
+      - asspp-network
+
+volumes:
+  caddy-data:
+    driver: local
+  caddy-config:
+    driver: local
+
+networks:
+  asspp-network:
+    driver: bridge
