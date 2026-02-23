@@ -5,20 +5,7 @@
 # 从环境变量 APP_DOMAIN 读取域名
 {$APP_DOMAIN} {
   # 反向代理到后端应用
-  reverse_proxy asspp:8080 {
-    # WebSocket 支持（重要！）
-    header_up Connection "Upgrade"
-    header_up Upgrade "websocket"
-
-    # 超时配置 - 防止长连接断开
-    #timeout 0
-    #flush_interval -1
-
-    # 健康检查
-    #health_uri /api/settings
-    #health_interval 10s
-    #health_timeout 5s
-  }
+  reverse_proxy asspp:8080
 
   # 请求日志
   log {
