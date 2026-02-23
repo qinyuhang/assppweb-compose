@@ -1,28 +1,69 @@
 # Caddy 配置文件 - AssppWeb 生产部署
-# 支持 Cloudflare 代理 + DNS 验证
+# 支持 Cloudflare 代理 + DNS 验证 + Xray 代理路由
 
 # 主域名配置
 # 从环境变量 APP_DOMAIN 读取域名
 {$APP_DOMAIN} {
-  # API 路径 - 禁用缓存
-  handle_path /api/* {
-    reverse_proxy asspp:8080
-
-    # API 禁用缓存
-    header {
-      Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
-      Pragma "no-cache"
-      Expires "0"
+  # ========================================
+  # Xray 代理路由配置
+  # ========================================
+  
+  # 方式1: WebSocket 路径转发 (vless/vmess + ws)
+  # Xray 客户端路径配置示例: "/ws" 或 "/proxy"
+  handle /ws {
+    reverse_proxy xray:10000 {
+      # WebSocket 升级支持
+      header_up Connection "Upgrade"
+      header_up Upgrade "websocket"
+      # 保留原始 Host
+      header_up Host {host}
+      # 传递真实 IP
+      header_up X-Real-IP {remote}
+      header_up X-Forwarded-For {remote}
+      header_up X-Forwarded-Proto {scheme}
     }
   }
-
-  # Wisp WebSocket 路径
-  handle_path /wisp/* {
-    reverse_proxy asspp:8080
+  
+  # 方式2: gRPC 转发 (vless/vmess + grpc)
+  # Xray 客户端 serviceName 配置示例: "proxy"
+  handle /proxy/* {
+    reverse_proxy xray:10001 {
+      # gRPC 需要 HTTP/2
+      transport http {
+        versions h2c
+      }
+      # 保留 gRPC 超时设置
+      flush_interval -1
+    }
   }
+  
+  # 方式3: XHTTP (SplitHTTP) 转发 - Xray 新版特性
+  handle /xh* {
+    reverse_proxy xray:10002 {
+      header_up Host {host}
+      header_up X-Real-IP {remote}
+    }
+  }
+  
+  # 方式4: 使用自定义路径转发 (根据你的 Xray 配置调整)
+  # handle /your-custom-path {
+  #   reverse_proxy xray:PORT {
+  #     header_up Connection "Upgrade"
+  #     header_up Upgrade "websocket"
+  #   }
+  # }
 
+  # ========================================
+  # AssppWeb 主应用路由
+  # ========================================
+  
   # 反向代理到后端应用
-  reverse_proxy asspp:8080
+  reverse_proxy asspp:8080 {
+    # 对 API 响应禁用缓存
+    header_down Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
+    header_down Pragma "no-cache"
+    header_down Expires "0"
+  }
 
   # 请求日志
   log {
@@ -44,12 +85,9 @@
 
     # Referrer Policy
     Referrer-Policy "strict-origin-when-cross-origin"
-
-    # 静态资源缓存控制
-    Cache-Control "public, max-age=3600"
   }
 
-  # GZIP 压缩
+  # GZIP 压缩 (注意: 如果 Xray 使用 WebSocket/XHTTP，建议对代理路径禁用)
   encode gzip
 
   # TLS 配置 - Cloudflare DNS 验证
@@ -61,7 +99,7 @@
 # 配置说明：
 #
 # 1. 环境变量配置
-#    - APP_DOMAIN: 在 .env 文件中设置你的域名 (如 app.welkin.online)
+#    - APP_DOMAIN: 在 .env 文件中设置你的域名 (如 example.com)
 #    - CF_API_TOKEN: 在 .env 文件中设置你的 Cloudflare API Token
 #
 # 2. Caddyfile 中的环境变量语法
@@ -75,7 +113,7 @@
 #    d) 复制生成的 token，添加到 .env 文件中
 #
 # 4. .env 文件示例
-#    APP_DOMAIN=app.welkin.online
+#    APP_DOMAIN=itunes.example.com
 #    CF_API_TOKEN=your_actual_cloudflare_token_here
 #    ACME_AGREE=true
 #
