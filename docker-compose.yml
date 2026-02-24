@@ -17,6 +17,22 @@ services:
     networks:
       - asspp-network
 
+  # Xray 代理服务 (可选)
+  # 取消注释以下配置并创建 xray-config 目录和 config.json
+  xray:
+    image: ghcr.io/xtls/xray-core:latest
+    volumes:
+      - ./xray-config:/etc/xray:ro
+    environment:
+      - XRAY_LOCATION_CONFIG=/etc/xray
+    restart: unless-stopped
+    # 暴露端口给 Caddy 内部使用
+    expose:
+      - "10000"  # WebSocket
+      - "10001"  # gRPC
+      - "10002"  # XHTTP
+    networks:
+      - asspp-network
   caddy:
     build:
       context: .
