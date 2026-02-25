@@ -52,6 +52,19 @@ services:
     networks:
       - asspp-network
 
+  # TODO subconvert
+
+  # snell5
+  snell5:
+    image: funnyzak/snell-server
+    container_name: snell-server
+    environment:
+      - IPV6=false
+      - PORT=${SNELL_PORT}
+      - PSK=${SNELL_PSK}
+    restart: unless-stopped
+    ports:
+      - ${SNELL_PORT}:${SNELL_PORT}
 volumes:
   caddy-data:
     driver: local
