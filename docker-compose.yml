@@ -65,6 +65,7 @@ services:
     restart: unless-stopped
     ports:
       - ${SNELL_PORT}:${SNELL_PORT}
+      - ${SNELL_PORT}:${SNELL_PORT}/udp
 volumes:
   caddy-data:
     driver: local
