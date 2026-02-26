@@ -31,6 +31,9 @@ services:
       - "10000"  # WebSocket
       - "10001"  # gRPC
       - "10002"  # XHTTP
+      - "10000/udp"  # WebSocket
+      - "10001/udp"  # gRPC
+      - "10002/udp"  # XHTTP
     networks:
       - asspp-network
   caddy:
@@ -41,6 +44,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "80:80/udp"
+      - "443:443/udp"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
