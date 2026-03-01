@@ -1,0 +1,3 @@
+[submodule "subconverter"]
+	path = subconverter
+	url = https://github.com/qinyuhang/subconverter.git
