@@ -57,8 +57,17 @@ services:
     networks:
       - asspp-network
 
-  # TODO subconvert
-
+  # subconvert
+  subconverter:
+    image: tindy2013/subconverter:latest
+    container_name: subconverter
+    restart: unless-stopped
+    ports:
+      - "25500:25500"
+    volumes:
+      - ./subconverter/base:/base
+    networks:
+      - asspp-network
   # snell5
   snell5:
     image: funnyzak/snell-server

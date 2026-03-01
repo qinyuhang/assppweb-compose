@@ -4,6 +4,19 @@
 # 主域名配置
 # 从环境变量 APP_DOMAIN 读取域名
 {$APP_DOMAIN} {
+
+  handle /canary {
+    respond "Caddy is working!" 200
+  }
+
+  handle_path /subconverter/* {
+    reverse_proxy subconverter:25500 {
+      header_up Host {host}
+      header_up X-Real-IP {remote}
+      header_up X-Forwarded-For {remote}
+      header_up X-Forwarded-Proto {scheme}
+    }
+  }
   # ========================================
   # Xray 代理路由配置
   # ========================================
