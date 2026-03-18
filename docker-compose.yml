@@ -59,6 +59,42 @@ services:
 
   # TODO subconvert
 
+  # WireGuard VPN 中心服务端
+  wireguard:
+    image: linuxserver/wireguard:latest
+    container_name: wireguard-server
+    restart: unless-stopped
+    ports:
+      - "51820:51820/udp"
+    volumes:
+      - ./wireguard:/config
+      - /lib/modules:/lib/modules:ro
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.ip_forward=1
+    environment:
+      - TZ=Asia/Shanghai
+    networks:
+      - asspp-network
+
+  # WireGuard 内网 DNS（AdGuard Home）
+  wireguard-dns:
+    image: adguard/adguardhome:latest
+    container_name: wireguard-dns
+    restart: unless-stopped
+    ports:
+      - "3000:3000" # 初次安装向导
+      - "53:53/tcp"
+      - "53:53/udp"
+    volumes:
+      - ./wireguard-dns/work:/opt/adguardhome/work
+      - ./wireguard-dns/conf:/opt/adguardhome/conf
+    networks:
+      - asspp-network
+
   # snell5
   snell5:
     image: funnyzak/snell-server

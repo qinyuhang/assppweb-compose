@@ -5,6 +5,20 @@
 # 从环境变量 APP_DOMAIN 读取域名
 {$APP_DOMAIN} {
   # ========================================
+  # AdGuard Home (WireGuard DNS) 路由
+  # ========================================
+
+  # DoH: https://<域名>/dns-query
+  handle /dns-query* {
+    reverse_proxy wireguard-dns:3001
+  }
+
+  # 管理界面: https://<域名>/adguardhome
+  handle_path /adguardhome* {
+    reverse_proxy wireguard-dns:3000
+  }
+
+  # ========================================
   # Xray 代理路由配置
   # ========================================
   
