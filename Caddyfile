@@ -1,6 +1,24 @@
 # Caddy 配置文件 - AssppWeb 生产部署
 # 支持 Cloudflare 代理 + DNS 验证 + Xray 代理路由
 
+# TrustTunnel VPN 子域名配置
+# 注意：TrustTunnel 监听在 8443 端口，此处仅用于证书管理和 Web 信息展示
+tt.{$APP_DOMAIN} {
+  # 返回简单的服务信息
+  respond "TrustTunnel VPN Service | Connect to {$APP_DOMAIN}:8443" 200
+  
+  # TLS 使用 Cloudflare DNS 验证（与 TrustTunnel 共享证书）
+  tls {
+    dns cloudflare {env.CF_API_TOKEN}
+  }
+  
+  # 日志
+  log {
+    format json
+    output stdout
+  }
+}
+
 # 主域名配置
 # 从环境变量 APP_DOMAIN 读取域名
 {$APP_DOMAIN} {

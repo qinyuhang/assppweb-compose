@@ -1,0 +1,30 @@
+# TrustTunnel 官方二进制构建镜像
+FROM alpine:latest
+
+# 安装必要的工具
+RUN apk add --no-cache curl tar bash openssl
+
+# 设置架构检测并下载 TrustTunnel 官方二进制
+ARG TARGETARCH
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+        ARCH="linux-aarch64"; \
+    else \
+        ARCH="linux-x86_64"; \
+    fi && \
+    echo "Downloading TrustTunnel for ${ARCH}..." && \
+    curl -fsSL -o /tmp/trusttunnel.tar.gz \
+    "https://github.com/TrustTunnel/TrustTunnel/releases/latest/download/trusttunnel-${ARCH}.tar.gz" && \
+    tar -xzf /tmp/trusttunnel.tar.gz -C /tmp && \
+    mv /tmp/trusttunnel-*/* /opt/ && \
+    rm -rf /tmp/trusttunnel* && \
+    chmod +x /opt/trusttunnel_endpoint && \
+    chmod +x /opt/setup_wizard
+
+WORKDIR /opt
+
+# 暴露端口
+EXPOSE 443/tcp 443/udp
+
+# 启动命令
+ENTRYPOINT ["./trusttunnel_endpoint"]
+CMD ["vpn.toml", "hosts.toml"]

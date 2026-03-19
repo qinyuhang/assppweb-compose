@@ -59,13 +59,42 @@ services:
 
   # TODO subconvert
 
+  # TrustTunnel VPN 服务
+  trusttunnel:
+    build:
+      context: .
+      dockerfile: Dockerfile.trusttunnel
+    container_name: trusttunnel-server
+    restart: unless-stopped
+    ports:
+      - "8443:443/tcp"
+      - "8443:443/udp"
+    volumes:
+      - ./trusttunnel-config/vpn.toml:/opt/vpn.toml:ro
+      - ./trusttunnel-config/hosts.toml:/opt/hosts.toml:ro
+      - ./trusttunnel-config/credentials.toml:/opt/credentials.toml:ro
+      - ./trusttunnel-config/rules.toml:/opt/rules.toml:ro
+      # 挂载 Caddy 的证书数据目录，只读
+      - caddy-data:/caddy-data:ro
+    environment:
+      - TRUSTTUNNEL_DOMAIN=${TRUSTTUNEL_DOMAIN}
+    networks:
+      - asspp-network
+    depends_on:
+      - caddy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "128m"
+        max-file: "5"
+
   # WireGuard VPN 中心服务端
   wireguard:
     image: linuxserver/wireguard:latest
     container_name: wireguard-server
     restart: unless-stopped
     ports:
-      - "51820:51820/udp"
+      - "${WG_PORT:-51820}:${WG_PORT:-51820}/udp"
     volumes:
       - ./wireguard:/config
       - /lib/modules:/lib/modules:ro
