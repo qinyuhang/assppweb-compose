@@ -20,9 +20,8 @@ tt.{$APP_DOMAIN} {
 }
 
 {$APP_DOMAIN_2} {
-  handle / {
-      reverse_proxy sub-store:30001
-  }
+  # 反向代理所有请求到 sub-store
+  reverse_proxy sub-store:30001
 
   tls {
     dns cloudflare {env.CF_API_TOKEN}
