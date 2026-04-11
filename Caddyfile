@@ -19,6 +19,16 @@ tt.{$APP_DOMAIN} {
   }
 }
 
+{$APP_DOMAIN_2} {
+  handle / {
+      reverse_proxy sub-store:30001
+  }
+
+  tls {
+    dns cloudflare {env.CF_API_TOKEN}
+  }
+}
+
 # 主域名配置
 # 从环境变量 APP_DOMAIN 读取域名
 {$APP_DOMAIN} {
