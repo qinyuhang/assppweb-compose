@@ -27,6 +27,12 @@ tt.{$APP_DOMAIN} {
   tls {
     dns cloudflare {env.CF_API_TOKEN}
   }
+
+  # 日志
+  log {
+    format json
+    output stdout
+  }
 }
 
 # 主域名配置
