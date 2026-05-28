@@ -28,12 +28,12 @@ services:
     restart: unless-stopped
     # 暴露端口给 Caddy 内部使用
     expose:
-      - "10000"  # WebSocket
-      - "10001"  # gRPC
-      - "10002"  # XHTTP
-      - "10000/udp"  # WebSocket
-      - "10001/udp"  # gRPC
-      - "10002/udp"  # XHTTP
+      - "10000" # WebSocket
+      - "10001" # gRPC
+      - "10002" # XHTTP
+      - "10000/udp" # WebSocket
+      - "10001/udp" # gRPC
+      - "10002/udp" # XHTTP
     networks:
       - asspp-network
   sub-store:
@@ -71,6 +71,7 @@ services:
       - CF_API_TOKEN=${CF_API_TOKEN}
       - APP_DOMAIN=${APP_DOMAIN}
       - APP_DOMAIN_2=${APP_DOMAIN_2}
+      - DERP_DOMAIN=${DERP_DOMAIN}
     networks:
       - asspp-network
 
@@ -153,6 +154,56 @@ services:
     ports:
       - ${SNELL_PORT}:${SNELL_PORT}
       - ${SNELL_PORT}:${SNELL_PORT}/udp
+  # ──────────────────────────────────────────────────────────
+  # Tailscale DERP 中继服务
+  #
+  # 架构说明：
+  #   - Caddy 处理 443/80（TLS 终止），反向代理至 derper:9090
+  #   - STUN（UDP 3478）直接暴露给公网，不经过 Caddy
+  #   - Caddy 托管的 TLS 证书通过共享卷传给 derper（certmode=manual）
+  #   - tailscaled 容器共享 Unix socket，derper 用于 verify-clients
+  # ──────────────────────────────────────────────────────────
+  derper:
+    build:
+      context: .
+      dockerfile: Dockerfile.derp
+    container_name: local-derp
+    restart: always
+    ports:
+      # STUN 必须直连公网，不能走代理
+      - "3478:3478/udp"
+    expose:
+      # HTTPS 监听端口，由 Caddy 内部代理
+      - "9090"
+    volumes:
+      # 宿主机的 tailscaled socket，用于 verify-clients
+      # 需要宿主机已安装并登录 tailscale（tailscaled 运行中）
+      - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock:ro
+    environment:
+      - DERP_DOMAIN=${DERP_DOMAIN}
+      # none: Caddy 负责 TLS 终止，derper 跑纯 HTTP
+      - DERP_CERT_MODE=none
+      # 内部 HTTPS 端口，Caddy 反向代理至此
+      - DERP_ADDR=:9090
+      - DERP_STUN=true
+      - DERP_STUN_PORT=3478
+      # -1 = 禁用 derper 自带的 HTTP；/generate_204 由 Caddy 代理
+      - DERP_HTTP_PORT=-1
+      # 开启后 derper 通过 /var/run/tailscale/tailscaled.sock 验证客户端
+      - DERP_VERIFY_CLIENTS=${DERP_VERIFY_CLIENTS:-false}
+    cap_add:
+      # 允许 ICMP（Tailscale 官方要求）
+      - NET_RAW
+    networks:
+      - asspp-network
+    depends_on:
+      - caddy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "64m"
+        max-file: "3"
+
 volumes:
   caddy-data:
     driver: local

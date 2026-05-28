@@ -19,6 +19,30 @@ tt.{$APP_DOMAIN} {
   }
 }
 
+# DERP 中继服务域名
+# DERP_DOMAIN 需要单独指向本机（不走 Cloudflare CDN 代理，需要 DNS-only 模式）
+# 原因：DERP 客户端需要直连真实 IP，CDN 代理会破坏 HTTP Upgrade 握手
+{$DERP_DOMAIN} {
+  # 使用 Cloudflare DNS 挑战申请真实 Let's Encrypt 证书
+  # Caddy 自动续期，证书存储在 caddy-data 卷供 derper 读取
+  # tls internal
+  tls {
+    dns cloudflare {env.CF_API_TOKEN}
+  }
+
+  # /generate_204 是 Tailscale 客户端检测 DERP 可达性的端点
+  # flush_interval -1 保证 HTTP Upgrade（derper 双向通道）正常工作
+  reverse_proxy derper:9090 {
+    flush_interval -1
+    header_up X-Forwarded-For {remote_host}
+  }
+
+  log {
+    format json
+    output stdout
+  }
+}
+
 {$APP_DOMAIN_2} {
   # 反向代理所有请求到 sub-store
   reverse_proxy sub-store:30001
