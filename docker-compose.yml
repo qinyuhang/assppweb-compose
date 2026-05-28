@@ -164,9 +164,7 @@ services:
   #   - tailscaled 容器共享 Unix socket，derper 用于 verify-clients
   # ──────────────────────────────────────────────────────────
   derper:
-    build:
-      context: .
-      dockerfile: Dockerfile.derp
+    image: ghcr.io/kaaanata/derper:v1.96.4
     container_name: local-derp
     restart: always
     ports:
