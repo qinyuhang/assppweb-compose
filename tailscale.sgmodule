@@ -1,10 +1,17 @@
 #!name=Tailscale Local Proxy
 #!desc=Route selected traffic through the local Tailscale SOCKS5 proxy on 127.0.0.1:1055
 
+# 使用方法
+# 1. 安装: brew install tailscale // 注意安装cli版本
+# 2. 启动 tailscaled: sudo /opt/homebrew/Cellar/tailscale/1.98.3/bin/tailscaled  --tun=userspace-networking --socks5-server=localhost:1055
+# 3. 启动 tailscale: /opt/homebrew/Cellar/tailscale/1.98.3/bin/tailscale up
+
+# 手动在自己的主profile里面加上这个
 [Proxy]
 Tailscale = socks5, 127.0.0.1, 1055
 
 [Rule]
+PROCESS-NAME,tailscaled,DIRECT
 IP-CIDR,192.168.31.0/24,Tailscale,no-resolve
 IP-CIDR,100.64.0.0/10,Tailscale,no-resolve
 IP-CIDR,100.100.100.100/32,Tailscale,no-resolve
