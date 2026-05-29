@@ -1,0 +1,10 @@
+#!name=Tailscale Local Proxy
+#!desc=Route selected traffic through the local Tailscale SOCKS5 proxy on 127.0.0.1:1055
+
+[Proxy]
+Tailscale = socks5, 127.0.0.1, 1055
+
+[Rule]
+IP-CIDR,192.168.31.0/24,Tailscale,no-resolve
+IP-CIDR,100.64.0.0/10,Tailscale,no-resolve
+IP-CIDR,100.100.100.100/32,Tailscale,no-resolve

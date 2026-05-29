@@ -1,0 +1,15 @@
+services:
+  ts-socks:
+    image: tailscale/tailscale:stable
+    container_name: ts-userspace-socks
+    restart: always
+    ports:
+      - "127.0.0.1:1055:1055"  # 把容器内的 Socks5 端口映射到 Mac 本地的 1055
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}  # 填入 Tailscale OAuth client secret，不再使用传统 auth key
+      - TS_EXTRA_ARGS=${TS_EXTRA_ARGS}
+      - TS_USERSPACE=true
+      - TS_SOCKS5_SERVER=${TS_SOCKS5_SERVER}
+      - TS_STATE_DIR=/var/lib/tailscale
+    volumes:
+      - ./ts-state:/var/lib/tailscale  # 极其关键！把持久化数据留在本地，容器重启无需重新配置或登录
