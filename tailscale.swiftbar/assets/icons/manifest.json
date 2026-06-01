@@ -1,0 +1,122 @@
+[
+  {
+    "file" : "ExitNodeIcon.png",
+    "name" : "ExitNodeIcon",
+    "size" : "30x22"
+  },
+  {
+    "file" : "HighPriorityIcon.png",
+    "name" : "HighPriorityIcon",
+    "size" : "58x56"
+  },
+  {
+    "file" : "StatusBarIcon.png",
+    "name" : "StatusBarIcon",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDefaultRouterOffline.png",
+    "name" : "StatusBarIconDefaultRouterOffline",
+    "size" : "22x23"
+  },
+  {
+    "file" : "StatusBarIconDefaultRouterOnline.png",
+    "name" : "StatusBarIconDefaultRouterOnline",
+    "size" : "22x23"
+  },
+  {
+    "file" : "StatusBarIconDimmed.png",
+    "name" : "StatusBarIconDimmed",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDot1.png",
+    "name" : "StatusBarIconDot1",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDot2.png",
+    "name" : "StatusBarIconDot2",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDot3.png",
+    "name" : "StatusBarIconDot3",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDot4.png",
+    "name" : "StatusBarIconDot4",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDot5.png",
+    "name" : "StatusBarIconDot5",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDot6.png",
+    "name" : "StatusBarIconDot6",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDot7.png",
+    "name" : "StatusBarIconDot7",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDot8.png",
+    "name" : "StatusBarIconDot8",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDot9.png",
+    "name" : "StatusBarIconDot9",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDot10.png",
+    "name" : "StatusBarIconDot10",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDot11.png",
+    "name" : "StatusBarIconDot11",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDot12.png",
+    "name" : "StatusBarIconDot12",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDot13.png",
+    "name" : "StatusBarIconDot13",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDot14.png",
+    "name" : "StatusBarIconDot14",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDot15.png",
+    "name" : "StatusBarIconDot15",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconDot16.png",
+    "name" : "StatusBarIconDot16",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconErrorOffline.png",
+    "name" : "StatusBarIconErrorOffline",
+    "size" : "22x22"
+  },
+  {
+    "file" : "StatusBarIconErrorOnline.png",
+    "name" : "StatusBarIconErrorOnline",
+    "size" : "22x22"
+  }
+]
