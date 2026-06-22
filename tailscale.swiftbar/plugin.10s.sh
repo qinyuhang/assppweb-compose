@@ -71,7 +71,6 @@ TS_UP_STATE_FILE="$TS_STATE_DIR/tailscale-up.state"
 UP_LOG="/tmp/tailscale-up-swiftbar.log"
 TSCALED_LOG="$HOME/Library/Logs/tailscaled-swiftbar.log"
 LAUNCHD_LABEL="com.qinyuhang.tailscaled.swiftbar"
-LAUNCHD_PLIST_SOURCE="$(cd "$(dirname "$0")" && pwd)/$LAUNCHD_LABEL.plist"
 LAUNCHD_PLIST_TARGET="$HOME/Library/LaunchAgents/$LAUNCHD_LABEL.plist"
 
 ONLINE_ICON_BASE64="$(cat <<'EOF'
@@ -111,10 +110,59 @@ open_in_console() {
 
 show_launchagent() {
   local plist_to_open="$LAUNCHD_PLIST_TARGET"
-  if [[ ! -f "$plist_to_open" ]]; then
-    plist_to_open="$LAUNCHD_PLIST_SOURCE"
-  fi
   open -a TextEdit "$plist_to_open" >/dev/null 2>&1 || open "$plist_to_open" >/dev/null 2>&1 || true
+}
+
+build_launchagent_plist_text() {
+  cat <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.qinyuhang.tailscaled.swiftbar</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__TSCALED_BIN__</string>
+        <string>--socket=/tmp/tailscaled-swiftbar.sock</string>
+        <string>--state=__HOME__/Library/TailscaleSwiftBar/tailscaled.state</string>
+        <string>--tun=userspace-networking</string>
+        <string>--socks5-server=localhost:1055</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+
+    <key>WorkingDirectory</key>
+    <string>/tmp</string>
+
+    <key>StandardOutPath</key>
+    <string>__HOME__/Library/Logs/tailscaled-swiftbar.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>__HOME__/Library/Logs/tailscaled-swiftbar.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+</dict>
+</plist>
+EOF
 }
 
 build_launchd_debug_text() {
@@ -226,15 +274,11 @@ render_launchagent_plist() {
 
   home_escaped="$(sed_escape_replacement "$HOME")"
   tailscaled_bin_escaped="$(sed_escape_replacement "$TSCALED_BIN")"
-  sed -e "s|__HOME__|$home_escaped|g" -e "s|__TSCALED_BIN__|$tailscaled_bin_escaped|g" "$LAUNCHD_PLIST_SOURCE" > "$LAUNCHD_PLIST_TARGET"
+  build_launchagent_plist_text | sed -e "s|__HOME__|$home_escaped|g" -e "s|__TSCALED_BIN__|$tailscaled_bin_escaped|g" > "$LAUNCHD_PLIST_TARGET"
 }
 
 install_launchagent() {
   mkdir -p "$TS_STATE_DIR" "$HOME/Library/Logs" "$HOME/Library/LaunchAgents"
-  if [[ ! -f "$LAUNCHD_PLIST_SOURCE" ]]; then
-    notify "plist not found: $LAUNCHD_PLIST_SOURCE"
-    return 1
-  fi
   if [[ -z "$TSCALED_BIN" || ! -x "$TSCALED_BIN" ]]; then
     notify "tailscaled not found"
     return 1
@@ -393,6 +437,40 @@ handle_action() {
       set_tailscale_desired_state "no"
       notify "tailscale down done"
       ;;
+    pingnode)
+      local node_ip="${2:-}"
+      local ping_output
+      if [[ -z "$node_ip" ]]; then
+        notify "missing node ip"
+        exit 1
+      fi
+      if [[ ! -x "$TS_BIN" ]]; then
+        notify "tailscale cli not found"
+        exit 1
+      fi
+
+      ping_output="$("$TS_BIN" --socket="$TS_SOCKET" ping "$node_ip" 2>&1 || true)"
+      if grep -Eiq 'pong|is local' <<<"$ping_output"; then
+        notify "ping ${node_ip} ok"
+      else
+        notify "ping ${node_ip} failed"
+      fi
+      ;;
+    copyip)
+      local node_ip="${2:-}"
+      if [[ -z "$node_ip" ]]; then
+        notify "missing node ip"
+        exit 1
+      fi
+
+      if command -v pbcopy >/dev/null 2>&1; then
+        printf '%s' "$node_ip" | pbcopy
+        notify "copied ${node_ip}"
+      else
+        notify "pbcopy not found"
+        exit 1
+      fi
+      ;;
     openuplog)
       open_in_console "$UP_LOG"
       ;;
@@ -427,8 +505,40 @@ handle_action() {
   esac
 }
 
+render_nodes_menu() {
+  local status_text="$1"
+  local found="no"
+  local line
+  local node_ip
+  local node_name
+
+  echo "Nodes"
+
+  while IFS= read -r line; do
+    node_ip="$(printf '%s\n' "$line" | awk '/^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+[[:space:]]/ {print $1}')"
+    if [[ -z "$node_ip" ]]; then
+      continue
+    fi
+
+    node_name="$(printf '%s\n' "$line" | awk '{print $2}')"
+    if [[ -z "$node_name" ]]; then
+      node_name="$node_ip"
+    fi
+    node_name="${node_name//|/ }"
+
+    found="yes"
+    echo "-- ${node_name} (${node_ip})"
+    echo "---- Ping | bash='$0' param1='action' param2='pingnode' param3='${node_ip}' terminal=false refresh=false"
+    echo "---- Copy IP | bash='$0' param1='action' param2='copyip' param3='${node_ip}' terminal=false refresh=false"
+  done <<<"$status_text"
+
+  if [[ "$found" != "yes" ]]; then
+    echo "-- no nodes"
+  fi
+}
+
 if [[ "${1:-}" == "action" ]]; then
-  handle_action "${2:-}"
+  handle_action "${2:-}" "${3:-}"
   exit 0
 fi
 
@@ -511,9 +621,9 @@ if [[ "$tailscale_desired" == "yes" ]]; then
 fi
 
 if [[ "$tailscaled_running" == "yes" && "$connected" == "yes" ]]; then
-  echo "TS | image=$ONLINE_ICON_BASE64"
+  echo "| image=$ONLINE_ICON_BASE64"
 else
-  echo "TS | image=$OFFLINE_ICON_BASE64"
+  echo "| image=$OFFLINE_ICON_BASE64"
 fi
 
 echo "---"
@@ -526,6 +636,8 @@ echo "IPv4: ${ipv4}"
 echo "---"
 echo "${toggle_mark}tailscaled | bash='$0' param1='action' param2='toggled' terminal=false refresh=true"
 echo "${ts_toggle_mark}tailscale | bash='$0' param1='action' param2='toggleup' terminal=false refresh=true"
+echo "---"
+render_nodes_menu "$status_output"
 echo "---"
 echo "Settings"
 echo "-- Install LaunchAgent | bash='$0' param1='action' param2='installagent' terminal=false refresh=true"

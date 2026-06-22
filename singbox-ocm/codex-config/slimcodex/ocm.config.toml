@@ -1,0 +1,16 @@
+#:schema https://developers.openai.com/codex/config-schema.json
+
+# Profile layer for: codex --profile ocm
+# Loaded from: $CODEX_HOME/ocm.config.toml
+
+model_provider = "ocm"
+model = "gpt-5.5"
+model_reasoning_effort = "high"
+
+[model_providers.ocm]
+name = "OCM Proxy"
+base_url = "http://127.0.0.1:3780/v1"
+supports_websockets = true
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4

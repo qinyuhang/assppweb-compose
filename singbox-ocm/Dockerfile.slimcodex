@@ -1,0 +1,11 @@
+FROM alpine as builder
+RUN apk add --no-cache wget tar gzip
+RUN wget https://github.com/openai/codex/releases/download/rust-v0.139.0/codex-package-x86_64-unknown-linux-musl.tar.gz && \
+    tar -xzf codex-package-x86_64-unknown-linux-musl.tar.gz -C /tmp/ && \
+    ls -lah /tmp && \
+    mv /tmp/bin/codex /usr/local/bin/
+
+FROM ubuntu as runtime
+COPY --from=builder /usr/local/bin/codex /usr/local/bin/codex
+WORKDIR /app
+ENTRYPOINT []

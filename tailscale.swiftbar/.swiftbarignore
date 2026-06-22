@@ -1,0 +1,13 @@
+# Keep SwiftBar from importing support files as plugins.
+
+.DS_Store
+README.md
+export_icons.swift
+tailscale.sgmodule
+*.md
+*.png
+*.plist
+*.json
+*.swift
+Contents/**
+assets/**

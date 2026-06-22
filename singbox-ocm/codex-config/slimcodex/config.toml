@@ -1,0 +1,15 @@
+#:schema https://developers.openai.com/codex/config-schema.json
+
+# Base config for slimcodex (Codex CLI 0.139+)
+# Note: legacy [profiles.xxx] in config.toml is deprecated for --profile selection.
+# Use separate profile files like ocm.config.toml instead.
+
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+
+# Optional: keep output less noisy in non-interactive runs
+hide_agent_reasoning = true
+personality = "pragmatic"
+
+[projects."/app"]
+trust_level = "trusted"
