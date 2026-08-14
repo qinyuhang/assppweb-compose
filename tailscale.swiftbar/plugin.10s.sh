@@ -505,12 +505,33 @@ handle_action() {
   esac
 }
 
+get_node_state_symbol() {
+  local state="$1"
+
+  case "$state" in
+    active)
+      printf '%s' "●"
+      ;;
+    idle)
+      printf '%s' "○"
+      ;;
+    offline)
+      printf '%s' "✕"
+      ;;
+    *)
+      printf '%s' "○"
+      ;;
+  esac
+}
+
 render_nodes_menu() {
   local status_text="$1"
   local found="no"
   local line
   local node_ip
   local node_name
+  local node_state
+  local node_symbol
 
   echo "Nodes"
 
@@ -526,8 +547,18 @@ render_nodes_menu() {
     fi
     node_name="${node_name//|/ }"
 
+    node_state="idle"
+    if printf '%s\n' "$line" | grep -Eiq '(^|[[:space:]])offline([,;]|$)'; then
+      node_state="offline"
+    elif printf '%s\n' "$line" | grep -Eiq '(^|[[:space:]])active([,;]|$)'; then
+      node_state="active"
+    elif printf '%s\n' "$line" | grep -Eiq '(^|[[:space:]])idle([,;]|$)'; then
+      node_state="idle"
+    fi
+    node_symbol="$(get_node_state_symbol "$node_state")"
+
     found="yes"
-    echo "-- ${node_name} (${node_ip})"
+    echo "-- ${node_symbol} ${node_name} (${node_ip})"
     echo "---- Ping | bash='$0' param1='action' param2='pingnode' param3='${node_ip}' terminal=false refresh=false"
     echo "---- Copy IP | bash='$0' param1='action' param2='copyip' param3='${node_ip}' terminal=false refresh=false"
   done <<<"$status_text"
